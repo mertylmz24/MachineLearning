@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Insomnia & Sleep Debt ANN Predictor</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="background-ambient">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-moon"></i>
+                </div>
+                <div>
+                    <h1>Digital Insomnia ANN</h1>
+                    <p class="subtitle">Ekran Süresi, Dijital Alışkanlıklar ve Uyku Borcu Tahmini (PyTorch & FastAPI)</p>
+                </div>
+            </div>
+            <div class="header-badges">
+                <span class="badge badge-purple"><i class="fa-solid fa-brain"></i> PyTorch ANN</span>
+                <span class="badge badge-blue"><i class="fa-solid fa-bolt"></i> FastAPI</span>
+                <span class="badge badge-green"><i class="fa-solid fa-database"></i> 31 Girdi Özelliği</span>
+            </div>
+        </header>
+
+        <!-- Presets Bar -->
+        <section class="presets-section">
+            <div class="presets-label">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Hızlı Profil Yükle:
+            </div>
+            <div class="presets-buttons">
+                <button type="button" class="preset-btn btn-no-debt" onclick="loadPreset('no_debt')">
+                    <i class="fa-solid fa-seedling"></i> Sağlıklı Uyku
+                </button>
+                <button type="button" class="preset-btn btn-mild" onclick="loadPreset('mild_debt')">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Hafif Borç
+                </button>
+                <button type="button" class="preset-btn btn-moderate" onclick="loadPreset('moderate_debt')">
+                    <i class="fa-solid fa-fire-flame-curved"></i> Ağır Dijital Uykusuzluk
+                </button>
+                <button type="button" class="preset-btn btn-random" onclick="loadRandomSample()">
+                    <i class="fa-solid fa-dice"></i> Veri Setinden Rastgele Çek
+                </button>
+                <button type="button" class="preset-btn btn-reset" onclick="resetForm()">
+                    <i class="fa-solid fa-rotate-right"></i> Sıfırla
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Content Grid -->
+        <div class="layout-grid">
+            <!-- Form Section -->
+            <main class="form-wrapper">
+                <form id="sleep-prediction-form" onsubmit="handlePrediction(event)">
+                    
+                    <!-- Group 1: Demographics & Profile -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <span class="card-icon icon-cyan"><i class="fa-solid fa-user"></i></span>
+                            <div>
+                                <h3>Demografik & Kronotip</h3>
+                                <p>Kişisel özellikler ve biyolojik saat tipi</p>
+                            </div>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="input-field">
+                                <label for="age">Yaş</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="age" name="age" min="16" max="90" value="25" required>
+                                    <span class="unit">yıl</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="gender">Cinsiyet</label>
+                                <select id="gender" name="gender" required>
+                                    <option value="Female">Kadın (Female)</option>
+                                    <option value="Male">Erkek (Male)</option>
+                                    <option value="Non-Binary">Non-Binary</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="chronotype">Kronotip (Biyolojik Ritim)</label>
+                                <select id="chronotype" name="chronotype" required>
+                                    <option value="Early Bird">Erkenci Kuş (Early Bird)</option>
+                                    <option value="Intermediate" selected>Orta / Dengeli (Intermediate)</option>
+                                    <option value="Night Owl">Gece Kuşu (Night Owl)</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="occupation">Meslek Durumu</label>
+                                <select id="occupation" name="occupation" required>
+                                    <option value="Student" selected>Öğrenci (Student)</option>
+                                    <option value="Professional">Profesyonel / Çalışan</option>
+                                    <option value="Freelancer">Serbest Çalışan (Freelancer)</option>
+                                    <option value="Unemployed">Çalışmıyor (Unemployed)</option>
+                                    <option value="Retired">Emekli (Retired)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 2: Screen & Digital Habits -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <span class="card-icon icon-purple"><i class="fa-solid fa-mobile-screen-button"></i></span>
+                            <div>
+                                <h3>Dijital Ekran Alışkanlıkları</h3>
+                                <p>Gece maruz kalınan ekran ve uygulama verileri</p>
+                            </div>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="input-field">
+                                <label for="bedtime_hour">
+                                    Yatış Saati
+                                    <span class="helper-text" id="bedtime_display">(23:30)</span>
+                                </label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.1" id="bedtime_hour" name="bedtime_hour" min="0" max="24" value="23.5" required>
+                                    <span class="unit">saat</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="screen_time_before_bed_min">Yatmadan Önceki Ekran Süresi</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="screen_time_before_bed_min" name="screen_time_before_bed_min" min="0" max="300" value="75" required>
+                                    <span class="unit">dakika</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="primary_app_category">En Çok Kullanılan Uygulama</label>
+                                <select id="primary_app_category" name="primary_app_category" required>
+                                    <option value="Short-Form Video" selected>Kısa Video (TikTok, Reels, Shorts)</option>
+                                    <option value="Social Media">Sosyal Medya (Instagram, X vb.)</option>
+                                    <option value="Streaming">Dizi / Film (Netflix, YouTube)</option>
+                                    <option value="Gaming">Oyun (Mobil / PC)</option>
+                                    <option value="Messaging">Mesajlaşma (WhatsApp, Telegram)</option>
+                                    <option value="E-Reading">E-Kitap / Okuma</option>
+                                    <option value="News">Haberler</option>
+                                </select>
+                            </div>
+                            <div class="input-field">
+                                <label for="screen_brightness_pct">Ekran Parlaklığı</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="screen_brightness_pct" name="screen_brightness_pct" min="5" max="100" value="80" required>
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <div class="input-field full-width toggle-wrapper">
+                                <div class="toggle-info">
+                                    <span class="toggle-title"><i class="fa-solid fa-eye"></i> Mavi Işık Filtresi (Gece Modu)</span>
+                                    <span class="toggle-desc">Ekran mavi ışık filtresi veya sıcak renk tonu aktif mi?</span>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="blue_light_filter_on" name="blue_light_filter_on">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 3: Lifestyle & Environment -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <span class="card-icon icon-amber"><i class="fa-solid fa-mug-hot"></i></span>
+                            <div>
+                                <h3>Yaşam Tarzı ve Çevre</h3>
+                                <p>Kafein, fiziksel hareketlilik ve oda şartları</p>
+                            </div>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="input-field">
+                                <label for="caffeine_intake_mg">Günlük Kafein Tüketimi</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="caffeine_intake_mg" name="caffeine_intake_mg" min="0" max="600" value="150" required>
+                                    <span class="unit">mg</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="caffeine_last_hour">
+                                    Son Kafein Tüketim Saati
+                                    <span class="helper-text" id="caffeine_time_display">(18:00)</span>
+                                </label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.5" id="caffeine_last_hour" name="caffeine_last_hour" min="6" max="23.5" value="18.0" required>
+                                    <span class="unit">saat</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="physical_activity_min">Günlük Fiziksel Aktivite</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="physical_activity_min" name="physical_activity_min" min="0" max="300" value="20" required>
+                                    <span class="unit">dakika</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="room_temperature_f">
+                                    Oda Sıcaklığı
+                                    <span class="helper-text" id="temp_celsius">(~21.6°C)</span>
+                                </label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.5" id="room_temperature_f" name="room_temperature_f" min="55" max="85" value="71.0" required>
+                                    <span class="unit">°F</span>
+                                </div>
+                            </div>
+                            <div class="input-field full-width">
+                                <label for="ambient_noise_db">Ortam Gürültü Düzeyi</label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.5" id="ambient_noise_db" name="ambient_noise_db" min="10" max="80" value="38.0" required>
+                                    <span class="unit">dB</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Group 4: Sleep Architecture & Fatigue -->
+                    <div class="form-card">
+                        <div class="card-header">
+                            <span class="card-icon icon-indigo"><i class="fa-solid fa-bed"></i></span>
+                            <div>
+                                <h3>Uyku Metrikleri & Ertesi Gün</h3>
+                                <p>Uyku döngüsü verileri ve yorgunluk seviyesi</p>
+                            </div>
+                        </div>
+                        <div class="card-body grid-2">
+                            <div class="input-field">
+                                <label for="sleep_onset_latency_min">Uykuya Dalma Süresi</label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.5" id="sleep_onset_latency_min" name="sleep_onset_latency_min" min="5" max="120" value="35.0" required>
+                                    <span class="unit">dakika</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="total_sleep_hours">Toplam Uyku Süresi</label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.1" id="total_sleep_hours" name="total_sleep_hours" min="3" max="12" value="6.2" required>
+                                    <span class="unit">saat</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="rem_sleep_pct">REM Uykusu Oranı</label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.5" id="rem_sleep_pct" name="rem_sleep_pct" min="5" max="40" value="15.0" required>
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="deep_sleep_pct">Derin Uyku Oranı</label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.5" id="deep_sleep_pct" name="deep_sleep_pct" min="5" max="40" value="14.0" required>
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="awakenings_count">Gece Uyanma Sayısı</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="awakenings_count" name="awakenings_count" min="0" max="15" value="3" required>
+                                    <span class="unit">kez</span>
+                                </div>
+                            </div>
+                            <div class="input-field">
+                                <label for="sleep_efficiency_pct">Uyku Verimliliği</label>
+                                <div class="input-with-unit">
+                                    <input type="number" step="0.5" id="sleep_efficiency_pct" name="sleep_efficiency_pct" min="50" max="100" value="78.0" required>
+                                    <span class="unit">%</span>
+                                </div>
+                            </div>
+                            <div class="input-field full-width">
+                                <label for="next_day_fatigue_score">
+                                    Ertesi Gün Yorgunluk Skoru
+                                    <span class="helper-text" id="fatigue_display">(Skor: 6.5 / 10 - Belirgin Yorgunluk)</span>
+                                </label>
+                                <div class="slider-field">
+                                    <input type="range" id="next_day_fatigue_score" name="next_day_fatigue_score" min="1.0" max="10.0" step="0.1" value="6.5">
+                                    <span class="slider-value" id="fatigue_val">6.5</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Button -->
+                    <div class="submit-container">
+                        <button type="submit" id="submit-btn" class="submit-btn">
+                            <span class="btn-text"><i class="fa-solid fa-wand-magic-sparkles"></i> Yapay Sinir Ağı ile Analiz Et</span>
+                            <span class="btn-loading d-none"><i class="fa-solid fa-spinner fa-spin"></i> Model Tahmini Hesaplanıyor...</span>
+                        </button>
+                    </div>
+                </form>
+            </main>
+
+            <!-- Results Sidebar -->
+            <aside class="results-wrapper">
+                <div class="result-card" id="results-placeholder">
+                    <div class="placeholder-content">
+                        <div class="placeholder-icon">
+                            <i class="fa-solid fa-chart-pie"></i>
+                        </div>
+                        <h3>Sonuçlar Burada Görünecek</h3>
+                        <p>Soldaki formu doldurup "Analiz Et" butonuna basabilir veya yukarıdaki hazır profillerden birini seçebilirsiniz.</p>
+                        <div class="placeholder-hint">
+                            <i class="fa-solid fa-circle-info"></i> Model 3 sınıflı uyku borcu derecesini ve olasılık dağılımını hesaplar.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-card d-none" id="results-panel">
+                    <div class="result-header">
+                        <span class="panel-tag"><i class="fa-solid fa-robot"></i> ANN Tahmin Çıktısı</span>
+                        <div id="ground-truth-badge" class="ground-truth-badge d-none">
+                            <i class="fa-solid fa-check-double"></i> Gerçek Değer: <strong id="ground-truth-text">-</strong>
+                        </div>
+                    </div>
+
+                    <div class="prediction-main">
+                        <div class="prediction-pill" id="prediction-badge">
+                            <i class="fa-solid fa-circle-check" id="prediction-icon"></i>
+                            <span id="prediction-title">Yükleniyor...</span>
+                        </div>
+                        <div class="confidence-container">
+                            <div class="confidence-circle" id="confidence-circle">
+                                <span class="confidence-val" id="confidence-val">0%</span>
+                                <span class="confidence-lbl">Güven Oranı</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Probabilities Distribution -->
+                    <div class="probabilities-section">
+                        <h4><i class="fa-solid fa-chart-bar"></i> Model Olasılık Dağılımı</h4>
+                        
+                        <div class="prob-row">
+                            <div class="prob-label-row">
+                                <span class="prob-name"><i class="fa-solid fa-circle text-green"></i> No Debt (Borç Yok)</span>
+                                <span class="prob-val" id="prob-no-debt-val">0%</span>
+                            </div>
+                            <div class="prob-bar-bg">
+                                <div class="prob-bar-fill bar-green" id="prob-no-debt-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="prob-row">
+                            <div class="prob-label-row">
+                                <span class="prob-name"><i class="fa-solid fa-circle text-amber"></i> Mild (Hafif Borç)</span>
+                                <span class="prob-val" id="prob-mild-val">0%</span>
+                            </div>
+                            <div class="prob-bar-bg">
+                                <div class="prob-bar-fill bar-amber" id="prob-mild-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <div class="prob-row">
+                            <div class="prob-label-row">
+                                <span class="prob-name"><i class="fa-solid fa-circle text-red"></i> Moderate (Orta / Belirgin)</span>
+                                <span class="prob-val" id="prob-moderate-val">0%</span>
+                            </div>
+                            <div class="prob-bar-bg">
+                                <div class="prob-bar-fill bar-red" id="prob-moderate-bar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personalized AI Sleep Hygiene Insights -->
+                    <div class="insights-section">
+                        <h4><i class="fa-solid fa-lightbulb"></i> Akıllı Uyku & Hijyen Önerileri</h4>
+                        <ul class="insights-list" id="insights-list">
+                            <!-- Dynamic recommendations injected here -->
+                        </ul>
+                    </div>
+
+                    <!-- Model Architecture Info Pill -->
+                    <div class="model-info-pill">
+                        <i class="fa-solid fa-network-wired"></i>
+                        <span>Model: <strong>Sequential ANN</strong> (31 Girdi &rarr; 15 &rarr; 15 &rarr; 3 Çıktı)</span>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Digital Insomnia & Sleep Debt ANN Project &bull; PyTorch &bull; Scikit-Learn Preprocessor &bull; FastAPI &bull; Modern UI</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
